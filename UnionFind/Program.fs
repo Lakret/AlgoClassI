@@ -10,6 +10,7 @@ open NUnit.Framework
 type UnionFind =
     abstract member Union : int * int -> UnionFind
     abstract member Find  : int * int -> bool
+    abstract member Id : int array with get
 
 type QuickFind(N) =
     let id = [| for i in 0..N-1 -> i |]
@@ -23,6 +24,8 @@ type QuickFind(N) =
 
         member this.Find(p, q) = (id.[p] = id.[q])
 
+        member this.Id with get() = Array.copy id
+
 type QuickUnion(N) =
     let id = [| for i in 0..N-1 -> i |]
 
@@ -35,6 +38,8 @@ type QuickUnion(N) =
             this :> UnionFind
 
         member this.Find(p, q) = (this.Root(p) = this.Root(q))
+ 
+        member this.Id with get() = Array.copy id
 
 type QuickUnionBalanced(N) =
     let id = [| for i in 0..N-1 -> i |]
@@ -52,6 +57,8 @@ type QuickUnionBalanced(N) =
             this :> UnionFind
 
         member this.Find(p, q) = (this.Root(p) = this.Root(q))
+
+        member this.Id with get() = Array.copy id
 
 type QuickUnionBalancedWithPathCompression(N) =
     let id = [| for i in 0..N-1 -> i |]
@@ -73,6 +80,8 @@ type QuickUnionBalancedWithPathCompression(N) =
             this :> UnionFind
 
         member this.Find(p, q) = (this.Root(p) = this.Root(q))
+
+        member this.Id with get() = id
 
 let performanceComparison() =
     let measurePerf f = 
