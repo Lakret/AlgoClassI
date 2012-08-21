@@ -53,6 +53,27 @@ type QuickUnionBalanced(N) =
 
         member this.Find(p, q) = (this.Root(p) = this.Root(q))
 
+type QuickUnionBalancedWithPathCompression(N) =
+    let id = [| for i in 0..N-1 -> i |]
+    let sizes = [| for _ in 0..N-1 -> 1 |]
+
+    member private this.Root(idx) =
+        if id.[idx] = idx then 
+            idx
+        else 
+            id.[idx] <- id.[id.[idx]] //one-pass path compression
+            this.Root(id.[idx])
+
+    interface UnionFind with
+        member this.Union(p, q) =
+            let proot, qroot = this.Root(p), this.Root(q)
+            if sizes.[proot] < sizes.[qroot] 
+                then id.[proot] <- qroot; sizes.[q] <- sizes.[q] + sizes.[p]
+                else id.[qroot] <- proot; sizes.[p] <- sizes.[p] + sizes.[q]
+            this :> UnionFind
+
+        member this.Find(p, q) = (this.Root(p) = this.Root(q))
+
 let performanceComparison() =
     let measurePerf f = 
         let watch = System.Diagnostics.Stopwatch.StartNew()
@@ -72,15 +93,20 @@ let performanceComparison() =
     let qf  = measurePerf <| fun() -> run formSequence findSequence (new QuickFind(size))
     let qu  = measurePerf <| fun() -> run formSequence findSequence (new QuickUnion(size))
     let qub = measurePerf <| fun() -> run formSequence findSequence (new QuickUnionBalanced(size))
-    printfn "Got:\n\t%i64 for QuickFind\n\t%i64 for QuickUnion\n\t%i64 for QuickUnionBalanced" qf qu qub
+    let quc = measurePerf <| fun() -> run formSequence findSequence (new QuickUnionBalancedWithPathCompression(size))
+    printfn "Got:\n\t%i64 for QuickFind\n\t%i64 for QuickUnion\n\t%i64 for QuickUnionBalanced \
+            \n\t%i64 for QuickUnionBalancedWithPathCompression"
+            qf qu qub quc
 
 printfn "Working..."
 performanceComparison()
 
+//Working...
 //Got:
-//        1048564 for QuickFind
-//        350064 for QuickUnion
-//        4264 for QuickUnionBalanced
+//	193764 for QuickFind
+//	128164 for QuickUnion
+//	1764 for QuickUnionBalanced 
+//	1164 for QuickUnionBalancedWithPathCompression
 
 // tests
 
@@ -98,3 +124,4 @@ type Tests() =
         Tests.UnionFindTest(new QuickFind(10))
         Tests.UnionFindTest(new QuickUnion(10))
         Tests.UnionFindTest(new QuickUnionBalanced(10))
+        Tests.UnionFindTest(new QuickUnionBalancedWithPathCompression(10))
